@@ -11,44 +11,40 @@ function Node(val, left=null, right=null) {
 };
 
 function serialize(node) {
-  let queue = [node];
-  let serializedNodes = [];
-  let nullsBeforeEnd = 0;
-
-  while (queue.length) {
-    let curr = queue.shift();
-
-    if (curr === null) {
-      serializedNodes.push('null');
-      nullsBeforeEnd++;
-    } else {
-      serializedNodes.push(encodeURI(curr.val));
-      nullsBeforeEnd = 0;
-
-      queue.push(curr.left);
-      queue.push(curr.right);
-    }
+  if (node === null) {
+    return '#';
   }
 
-  return serializedNodes.slice(0, -nullsBeforeEnd).join(',');
+  return `${node.val} ${serialize(node.left)} ${serialize(node.right)}`;
 }
 
-function deserializeHelper(vals, i) {
-  if (i >= vals.length || vals[i] === 'null') {
-    return null;
-  }
+function deserializeImpl(iter) {
+  let next = iter.next();
+
+  if (next.value === '#' || next.done) return null;
 
   return new Node(
-    vals[i],
-    deserializeHelper(vals, 2*i + 1),
-    deserializeHelper(vals, 2*i + 2)
+    next.value,
+    deserializeImpl(iter),
+    deserializeImpl(iter)
   );
 }
 
 function deserialize(s) {
-  let vals = s.split(',');
+  if (s.length === 0) {
+    return null;
+  }
 
-  return deserializeHelper(vals, 0);
+  return deserializeImpl(s.split(' ')[Symbol.iterator]());
 }
 
-let node = new Node('root', new Node('left', new Node('left.left')), new Node('right'));
+[
+  null,
+  new Node('root'),
+  new Node('1', null, new Node('2', null, new Node('3', null, new Node('4', null, null)))),
+  new Node('root', new Node('left', new Node('left.left', null), null), new Node('right', null, null))
+].forEach((node) => {
+  console.log(JSON.stringify(deserialize(serialize(node)), 2, 2))
+});
+
+
